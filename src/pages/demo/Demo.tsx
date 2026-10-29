@@ -6,6 +6,7 @@ import { FLAVORS } from '../../data';
 import type { Stock } from '../../services/ai';
 import { getActiveStock, onAdminChange } from '../../services/tenant';
 import type { Flavor, Mood, Recipe } from '../../types';
+import { useRecipeImages } from '../../hooks/useRecipeImages';
 import Hero from './Hero';
 import Selector from './Selector';
 import Mixing from './Mixing';
@@ -42,6 +43,8 @@ export default function Demo() {
   const [selected, setSelected] = useState<Recipe | null>(null);
   const [stock, setStock] = useState<Stock>({});
   const [dispenserId, setDispenserId] = useState<string | null>(null);
+
+  const images = useRecipeImages(recipes, mood);
 
   const available = useMemo(() => FLAVORS.filter((f) => (stock[f.id] ?? 0) > 0), [stock]);
 
@@ -132,6 +135,7 @@ export default function Demo() {
             recipes={recipes}
             flavors={flavors}
             mood={mood}
+            images={images}
             onBack={() => setPhase('mood')}
             onSelect={(r) => {
               setSelected(r);
@@ -143,6 +147,7 @@ export default function Demo() {
           <RecipeCard
             recipe={selected}
             mood={mood}
+            image={images[selected.id]}
             dispenserId={dispenserId}
             onBack={() => setPhase('recipes')}
             onRestart={() => reset('hero')}

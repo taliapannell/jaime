@@ -109,11 +109,33 @@ export async function generateRecipes(f1: Flavor, f2: Flavor, mood: Mood, stock:
   ];
 }
 
+/** Describes the new flavor for the image model, using the recipe's name, notes, bean colors and mood. */
+function buildImagePrompt(recipe: Recipe, mood: Mood): string {
+  const beans = recipe.ingredients.map((i) => i.flavor.name).join(', ');
+  return (
+    `Studio macro photo of a handful of brand-new gourmet jelly beans called "${recipe.newFlavorName}". ` +
+    `${recipe.newFlavorNotes} Made by blending: ${beans}. ` +
+    `Use colors that match those flavors, and a ${mood.name.toLowerCase()} mood. ` +
+    `Glossy beans on a clean, softly lit cream background, shallow depth of field. No text, no logos.`
+  );
+}
+
 /**
- * Returns a URL for the generated recipe hero image.
- * Returns null until the image model is wired up; the UI renders procedural art instead.
+ * Returns a data URL for the generated recipe hero image via the /api/recipe-image proxy.
+ * Returns null on any failure (not configured, API error, timeout) so the UI falls back to procedural art.
  */
-export async function generateRecipeImage(_recipe: Recipe): Promise<string | null> {
-  await wait(900);
-  return null;
+export async function generateRecipeImage(recipe: Recipe, mood: Mood, signal?: AbortSignal): Promise<string | null> {
+  try {
+    const res = await fetch('/api/recipe-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: buildImagePrompt(recipe, mood) }),
+      signal,
+    });
+    if (!res.ok) return null;
+    const { image } = (await res.json()) as { image?: string };
+    return image ?? null;
+  } catch {
+    return null;
+  }
 }
