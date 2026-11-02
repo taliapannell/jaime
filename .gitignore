@@ -4,3 +4,6 @@ dist
 .env
 .env.*
 .DS_Store
+dist-lambda
+!.env.example
+dist-server

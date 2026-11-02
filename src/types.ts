@@ -24,6 +24,8 @@ export interface Recipe {
   /** Name of the brand-new flavor the blend creates. */
   newFlavorName: string;
   newFlavorNotes: string;
+  /** Photo brief written by the recipe model; absent on fallback recipes. */
+  imagePrompt?: string;
 }
 
 export interface SentimentResult {
