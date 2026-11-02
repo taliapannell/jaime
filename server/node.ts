@@ -3,11 +3,12 @@ import { stat } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { generateImage } from './imageCore';
-import { IMAGE_ROUTE, readJson, sendJson } from './http';
+import { IMAGE_ROUTE, RECIPES_ROUTE, readJson, sendJson } from './http';
+import { generateRecipes } from './recipeCore';
 
 /**
  * Production server for the ETI hosting platform: serves the built app from dist/ and
- * POST /api/recipe-image from one Node process. Image API keys come from the process
+ * POST /api/recipes + /api/recipe-image from one Node process. API keys come from the process
  * environment (see .env.example). Auth is handled upstream by the load balancer (Cognito).
  */
 const PORT = Number(process.env.PORT) || 8080;
@@ -37,6 +38,18 @@ async function serveImage(req: IncomingMessage, res: ServerResponse) {
     return sendJson(res, 400, { error: 'Invalid request' });
   }
   const { status, body } = await generateImage(process.env, prompt);
+  sendJson(res, status, body);
+}
+
+async function serveRecipes(req: IncomingMessage, res: ServerResponse) {
+  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' });
+  let input: Record<string, unknown>;
+  try {
+    input = await readJson(req);
+  } catch {
+    return sendJson(res, 400, { error: 'Invalid request' });
+  }
+  const { status, body } = await generateRecipes(process.env, input);
   sendJson(res, status, body);
 }
 
@@ -84,6 +97,7 @@ const server = createServer(async (req, res) => {
   const pathname = new URL(req.url || '/', 'http://localhost').pathname;
   try {
     if (pathname === IMAGE_ROUTE) await serveImage(req, res);
+    else if (pathname === RECIPES_ROUTE) await serveRecipes(req, res);
     else await serveStatic(pathname, req, res);
   } catch (err) {
     console.error('[server]', err);
