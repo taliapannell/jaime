@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import { analyzeSentiment, generateRecipes, getThinkingText, type Stock } from '../../services/ai';
 import type { Flavor, Mood, Recipe } from '../../types';
-import GeneratedArt from '../../components/GeneratedArt';
+import RecipeArt from '../../components/RecipeArt';
+import type { RecipeImage } from '../../hooks/useRecipeImages';
 import { SelectionChips } from './Selector';
 
 interface Props {
@@ -10,6 +11,10 @@ interface Props {
   flavor2: Flavor;
   mood: Mood;
   stock: Stock;
+  /** Photos for the recipes reported via onRecipes, keyed by recipe id. */
+  images: Record<string, RecipeImage>;
+  /** Called as soon as recipes arrive, so photo generation can start while cards reveal. */
+  onRecipes: (recipes: Recipe[]) => void;
   onDone: (recipes: Recipe[]) => void;
 }
 
@@ -18,7 +23,7 @@ const TICK_MS = 20;
 const CARD_REVEAL_MS = 600;
 
 /** Streams the (mock) model's reasoning and reveals recipe cards as they "arrive". */
-export default function Mixing({ flavor1, flavor2, mood, stock, onDone }: Props) {
+export default function Mixing({ flavor1, flavor2, mood, stock, images, onRecipes, onDone }: Props) {
   const [fullText, setFullText] = useState('');
   const [shown, setShown] = useState(0);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -51,6 +56,7 @@ export default function Mixing({ flavor1, flavor2, mood, stock, onDone }: Props)
       const r = await generateRecipes(flavor1, flavor2, mood, stock);
       if (cancelled) return;
       setRecipes(r);
+      onRecipes(r);
       const revealId = window.setInterval(() => {
         setRevealed((n) => {
           if (n + 1 >= r.length) window.clearInterval(revealId);
@@ -93,7 +99,7 @@ export default function Mixing({ flavor1, flavor2, mood, stock, onDone }: Props)
             {recipes.slice(0, revealed).map((r) => (
               <li key={r.id} className="recipe-mini">
                 <div className="recipe-mini__art">
-                  <GeneratedArt recipe={r} />
+                  <RecipeArt recipe={r} image={images[r.id]} />
                 </div>
                 <div className="recipe-mini__body">
                   <h2>{r.name}</h2>

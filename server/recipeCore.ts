@@ -1,13 +1,16 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { AnthropicBedrockMantle } from '@anthropic-ai/bedrock-sdk';
 import { FLAVORS, MOODS } from '../src/data';
 import type { Env } from './imageCore';
 
 /**
  * Host-independent recipe generation with Claude, shared by the Vite dev proxy (recipeImage.ts),
  * the production server (node.ts) and the AWS Lambda handler (lambda.ts).
- * Claude invents the recipes and writes the photo prompt for each; the image model renders it.
+ * Claude (on Amazon Bedrock) invents the recipes and writes the photo prompt for each; the image model renders it.
+ * AWS credentials come from the standard chain: local AWS login in dev, the task/Lambda IAM role in production.
  */
-const MODEL = 'claude-opus-5-5';
+const MODEL = 'anthropic.claude-opus-5-5';
+const DEFAULT_REGION = 'us-east-1';
 const RECIPE_COUNT = 4;
 const MAX_BEANS_PER_FLAVOR = 4;
 const UPSTREAM_TIMEOUT_MS = 45_000;
@@ -93,9 +96,11 @@ export async function generateRecipes(env: Env, input: Record<string, unknown>):
 
   const loaded = FLAVORS.filter((f) => stock[f.id] > 0);
   if (loaded.length === 0) return { status: 409, body: { error: 'Dispenser is empty' } };
-  if (!env.ANTHROPIC_API_KEY) return { status: 503, body: { error: 'Recipe API is not configured' } };
-
-  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, timeout: UPSTREAM_TIMEOUT_MS, maxRetries: 1 });
+  const client = new AnthropicBedrockMantle({
+    awsRegion: env.BEDROCK_REGION || env.AWS_REGION || DEFAULT_REGION,
+    timeout: UPSTREAM_TIMEOUT_MS,
+    maxRetries: 1,
+  });
   const request = {
     anchors: [flavor1, flavor2].map((f) => ({ id: f.id, name: f.name, loaded: stock[f.id] > 0 })),
     mood: mood.name,
@@ -103,11 +108,9 @@ export async function generateRecipes(env: Env, input: Record<string, unknown>):
   };
 
   try {
-    const response = await client.beta.messages.create({
+    const response = await client.messages.create({
       model: MODEL,
       max_tokens: 8000,
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
       // Recipe ideation is quick creative work; low effort keeps the Mixing screen snappy.
       output_config: { effort: 'low', format: { type: 'json_schema', schema: schema(loaded.map((f) => f.id)) } },
       system: SYSTEM,

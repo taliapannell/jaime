@@ -1,9 +1,15 @@
+import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
+
 /**
  * Host-independent recipe image generation, shared by the Vite dev proxy (recipeImage.ts)
- * and the AWS Lambda handler (lambda.ts). Supports OpenAI and Azure OpenAI.
+ * and the AWS Lambda handler (lambda.ts). Supports Azure OpenAI, OpenAI, and (when neither
+ * key is set) Stability AI on Amazon Bedrock using the standard AWS credential chain.
  */
 const MAX_PROMPT = 2000;
 const UPSTREAM_TIMEOUT_MS = 60_000;
+// Bedrock's text-to-image Stability models are only offered in us-west-2.
+const DEFAULT_BEDROCK_IMAGE_MODEL = 'stability.stable-image-core-v1:1';
+const DEFAULT_BEDROCK_IMAGE_REGION = 'us-west-2';
 
 export type Env = Record<string, string | undefined>;
 export interface ImageResult {
@@ -34,12 +40,43 @@ function upstream(env: Env, prompt: string): { url: string; headers: Record<stri
   return null;
 }
 
+let bedrock: BedrockRuntimeClient | undefined;
+
+/** Generates an image with a Stability AI model on Bedrock and returns a data URL. */
+async function generateWithBedrock(env: Env, prompt: string): Promise<ImageResult> {
+  bedrock ??= new BedrockRuntimeClient({ region: env.BEDROCK_IMAGE_REGION || DEFAULT_BEDROCK_IMAGE_REGION });
+  try {
+    const response = await bedrock.send(
+      new InvokeModelCommand({
+        modelId: env.BEDROCK_IMAGE_MODEL || DEFAULT_BEDROCK_IMAGE_MODEL,
+        contentType: 'application/json',
+        accept: 'application/json',
+        body: JSON.stringify({ prompt, output_format: 'jpeg', aspect_ratio: '1:1' }),
+      }),
+      { abortSignal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) },
+    );
+    const json = JSON.parse(new TextDecoder().decode(response.body)) as {
+      images?: string[];
+      finish_reasons?: (string | null)[];
+    };
+    const b64 = json.images?.[0];
+    if (!b64 || json.finish_reasons?.[0]) {
+      console.error(`[recipe-image] bedrock finish_reason: ${json.finish_reasons?.[0] ?? 'no image'}`);
+      return { status: 502, body: { error: 'No image returned' } };
+    }
+    return { status: 200, body: { image: `data:image/jpeg;base64,${b64}` } };
+  } catch (err) {
+    console.error('[recipe-image] bedrock', err);
+    return { status: 502, body: { error: 'Image generation failed' } };
+  }
+}
+
 /** Validates the prompt, calls the configured image API and returns a data URL. Never throws. */
 export async function generateImage(env: Env, prompt: unknown): Promise<ImageResult> {
   if (typeof prompt !== 'string' || !prompt.trim()) return { status: 400, body: { error: 'Missing prompt' } };
 
   const target = upstream(env, prompt.slice(0, MAX_PROMPT));
-  if (!target) return { status: 503, body: { error: 'Image API is not configured' } };
+  if (!target) return generateWithBedrock(env, prompt.slice(0, MAX_PROMPT));
 
   try {
     const response = await fetch(target.url, {

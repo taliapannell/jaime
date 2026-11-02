@@ -8,12 +8,14 @@
     "build": "tsc --noEmit && vite build && npm run build:server",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "build:lambda": "esbuild server/lambda.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist-lambda/index.mjs && cd dist-lambda && zip -q -j function.zip index.mjs",
-    "build:server": "esbuild server/node.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist-server/index.mjs",
+    "build:lambda": "esbuild server/lambda.ts --bundle --platform=node --target=node22 --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=dist-lambda/index.mjs && cd dist-lambda && zip -q -j function.zip index.mjs",
+    "build:server": "esbuild server/node.ts --bundle --platform=node --target=node22 --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=dist-server/index.mjs",
     "start": "node dist-server/index.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/bedrock-sdk": "^1.1.1",
     "@anthropic-ai/sdk": "^1.4.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1161.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

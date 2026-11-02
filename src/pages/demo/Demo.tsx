@@ -124,6 +124,8 @@ export default function Demo() {
             flavor2={flavors[1]}
             mood={mood}
             stock={stock}
+            images={images}
+            onRecipes={setRecipes}
             onDone={(r) => {
               setRecipes(r);
               setPhase('recipes');
