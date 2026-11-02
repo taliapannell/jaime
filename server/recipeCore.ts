@@ -34,7 +34,7 @@ const SYSTEM = `You are the recipe designer for JAIME, a jelly bean dispenser th
 Given two anchor flavors, the guest's mood and the beans currently loaded, design exactly ${RECIPE_COUNT} recipes, from a faithful classic pairing to a bold experimental blend.
 - Use only flavor ids from the "loaded" list, 2-5 beans total per flavor at most ${MAX_BEANS_PER_FLAVOR}, and include at least one anchor in every recipe.
 - Recipe names are short and playful. Descriptions are one sentence. newFlavorName names the brand-new flavor the blend creates (2-3 words); newFlavorNotes is one sentence of tasting notes.
-- imagePrompt is a photo brief for an image model: a studio macro photo of a handful of the new jelly beans, describing bean colors that suggest the blended flavors, a mood-appropriate lighting and backdrop, and ending with "No text, no logos." Keep it under 80 words.
+- imagePrompt is a photo brief for an image model. Do not show jelly beans. Imagine the new flavor as a real food or drink (a smoothie, slushie, dessert, pastry, cocktail-style mocktail, and so on), and describe a professional advertising food photo of it: the hero item up close, fresh ingredients from the blended flavors arranged around it, a scene and lighting that evoke the mood (for example a beach at sunset for inspired, a cozy cafe for calm), photorealistic, shallow depth of field. End with "No text, no logos, no labels." Keep it under 80 words.
 - Keep everything family-friendly.`;
 
 /** JSON schema for structured outputs; flavor ids are constrained to what is loaded. */

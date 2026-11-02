@@ -145,15 +145,15 @@ async function fallbackRecipes(f1: Flavor, f2: Flavor, mood: Mood, stock: Stock)
   ];
 }
 
-/** Describes the new flavor for the image model: Claude's brief when present, otherwise built from the recipe. */
+/** Photo brief for the image model: Claude's when present, otherwise a food photo built from the recipe. */
 function buildImagePrompt(recipe: Recipe, mood: Mood): string {
   if (recipe.imagePrompt) return recipe.imagePrompt;
-  const beans = recipe.ingredients.map((i) => i.flavor.name).join(', ');
+  const flavors = recipe.ingredients.map((i) => i.flavor.name).join(', ');
   return (
-    `Studio macro photo of a handful of brand-new gourmet jelly beans called "${recipe.newFlavorName}". ` +
-    `${recipe.newFlavorNotes} Made by blending: ${beans}. ` +
-    `Use colors that match those flavors, and a ${mood.name.toLowerCase()} mood. ` +
-    `Glossy beans on a clean, softly lit cream background, shallow depth of field. No text, no logos.`
+    `Professional advertising food photo of a dessert or drink inspired by "${recipe.newFlavorName}": ` +
+    `${recipe.newFlavorNotes} Flavors: ${flavors}, with fresh ingredients arranged around the hero item. ` +
+    `A scene and lighting that feel ${mood.name.toLowerCase()}. Photorealistic, shallow depth of field. ` +
+    `No jelly beans. No text, no logos, no labels.`
   );
 }
 
