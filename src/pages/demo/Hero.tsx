@@ -20,7 +20,9 @@ export default function Hero({ onStart }: { onStart: () => void }) {
       <div className="hero__copy">
         <div className="hero__pills">
           <span className="pill pill--light">
-            Powered by <strong className="pill__brand">Anthropic</strong>
+            <span>
+              accenture <span aria-hidden="true">|</span> aws
+            </span>
           </span>
         </div>
         <h1 className="hero__title">

@@ -25,15 +25,6 @@ const FLOATING = [
   { c: '#f2a07b', l: 80, t: 12, s: 28, r: 70 },
 ];
 
-/** Partner mark shown on every screen, matching the original JAIME kiosk. */
-function PartnerMark() {
-  return (
-    <p className="partner-mark">
-      accenture <span aria-hidden="true">|</span> aws
-    </p>
-  );
-}
-
 /** JAIME iPad experience: hero → flavors → mood → mixing → recipes → recipe card + dispense. */
 export default function Demo() {
   const [phase, setPhase] = useState<Phase>('hero');
@@ -81,7 +72,6 @@ export default function Demo() {
     return (
       <div className="page page--sunny">
         <Hero onStart={() => reset('flavors')} />
-        <PartnerMark />
       </div>
     );
   }
@@ -156,7 +146,6 @@ export default function Demo() {
           />
         )}
       </main>
-      <PartnerMark />
     </div>
   );
 }
