@@ -221,6 +221,18 @@ button:disabled {
   color: #5a12a8;
 }
 
+.partner-mark {
+  position: absolute;
+  right: 20px;
+  bottom: 12px;
+  z-index: 5;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b6175;
+  pointer-events: none;
+}
+
 /* ---------- Launchpad ---------- */
 .page--launch {
   background:

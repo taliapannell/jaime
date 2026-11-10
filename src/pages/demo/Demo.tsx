@@ -25,6 +25,15 @@ const FLOATING = [
   { c: '#f2a07b', l: 80, t: 12, s: 28, r: 70 },
 ];
 
+/** Partner mark shown on every screen except the hero (which has it in the pill). */
+function PartnerMark() {
+  return (
+    <p className="partner-mark">
+      accenture <span aria-hidden="true">|</span> aws
+    </p>
+  );
+}
+
 /** JAIME iPad experience: hero → flavors → mood → mixing → recipes → recipe card + dispense. */
 export default function Demo() {
   const [phase, setPhase] = useState<Phase>('hero');
@@ -146,6 +155,7 @@ export default function Demo() {
           />
         )}
       </main>
+      <PartnerMark />
     </div>
   );
 }
